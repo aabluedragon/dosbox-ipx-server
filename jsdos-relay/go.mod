@@ -1,4 +1,4 @@
-module github.com/aabluedragon/dosbox-ipx-server/src
+module github.com/aabluedragon/dosbox-ipx-server/jsdos-relay
 
 go 1.20
 

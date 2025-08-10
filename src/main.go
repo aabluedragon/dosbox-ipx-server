@@ -1,15 +1,31 @@
 package main
 
 import (
+	"encoding/json"
 	"flag"
 	"log"
 	"net/http"
 	"strings"
 
+	"os"
+
 	"github.com/gorilla/websocket"
 )
 
-const port = "1900"
+var port string
+
+func init() {
+	var portFlag string
+	flag.StringVar(&portFlag, "port", "", "Port to listen on")
+	flag.Parse()
+	if portFlag != "" {
+		port = portFlag
+	} else if p := os.Getenv("PORT"); p != "" {
+		port = p
+	} else {
+		port = "1900"
+	}
+}
 
 var upgrader = websocket.Upgrader{
 	Subprotocols: []string{"binary"},
@@ -58,13 +74,27 @@ func ipxWebSocket(w http.ResponseWriter, r *http.Request) {
 	conn.Close()
 }
 
+func pingHandler(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	response := map[string]string{
+		"status":  "ok",
+		"message": "pong",
+	}
+	json.NewEncoder(w).Encode(response)
+}
+
 var cert string
 var key string
 
 func main() {
+	log.Println("Listening on port", port)
+
 	flag.StringVar(&cert, "c", "", ".cert file")
 	flag.StringVar(&key, "k", "", ".key file")
 	flag.Parse()
+
+	http.HandleFunc("/ping", pingHandler)
+
 	http.HandleFunc("/ipx/", ipxWebSocket)
 	if len(cert) == 0 || len(key) == 0 {
 		log.Println(".cert or .key file is not provided, disabling TLS")

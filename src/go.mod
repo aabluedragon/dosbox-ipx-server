@@ -1,4 +1,4 @@
-module jsdos/ipx/server
+module github.com/aabluedragon/dosbox-ipx-server/src
 
 go 1.20
 

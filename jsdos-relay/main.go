@@ -75,6 +75,17 @@ func ipxWebSocket(w http.ResponseWriter, r *http.Request) {
 }
 
 func pingHandler(w http.ResponseWriter, r *http.Request) {
+	// Add CORS headers
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "GET, POST, OPTIONS")
+	w.Header().Set("Access-Control-Allow-Headers", "Content-Type")
+
+	// Handle preflight OPTIONS request
+	if r.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	w.Header().Set("Content-Type", "application/json")
 	response := map[string]string{
 		"status":  "ok",
@@ -99,11 +110,11 @@ func main() {
 
 	http.HandleFunc("/ipx/", ipxWebSocket)
 	if len(cert) == 0 || len(key) == 0 {
-		log.Println(logprefix,".cert or .key file is not provided, disabling TLS")
+		log.Println(logprefix, ".cert or .key file is not provided, disabling TLS")
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
 			log.Fatal(logprefix, err)
 		}
 	} else if err := http.ListenAndServeTLS(":"+port, cert, key, nil); err != nil {
-		log.Fatal(logprefix,err)
+		log.Fatal(logprefix, err)
 	}
 }

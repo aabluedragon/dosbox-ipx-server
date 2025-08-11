@@ -4,6 +4,7 @@
 *.dll
 *.so
 *.dylib
+/jsdos-relay/jsdos-relay
 
 # Test binary, built with `go test -c`
 *.test

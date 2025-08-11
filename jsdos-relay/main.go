@@ -86,8 +86,10 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 var cert string
 var key string
 
+var logprefix = "jsdos-relay"
+
 func main() {
-	log.Println("Listening on port", port)
+	log.Println(logprefix, "Listening on port", port)
 
 	flag.StringVar(&cert, "c", "", ".cert file")
 	flag.StringVar(&key, "k", "", ".key file")
@@ -97,11 +99,11 @@ func main() {
 
 	http.HandleFunc("/ipx/", ipxWebSocket)
 	if len(cert) == 0 || len(key) == 0 {
-		log.Println(".cert or .key file is not provided, disabling TLS")
+		log.Println(logprefix,".cert or .key file is not provided, disabling TLS")
 		if err := http.ListenAndServe(":"+port, nil); err != nil {
-			log.Fatal(err)
+			log.Fatal(logprefix, err)
 		}
 	} else if err := http.ListenAndServeTLS(":"+port, cert, key, nil); err != nil {
-		log.Fatal(err)
+		log.Fatal(logprefix,err)
 	}
 }

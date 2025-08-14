@@ -7,24 +7,19 @@ import (
 	"net/http"
 	"strings"
 
-	"os"
-
 	"github.com/gorilla/websocket"
 )
 
 var port string
+var cert string
+var key string
+
 
 func init() {
-	var portFlag string
-	flag.StringVar(&portFlag, "port", "", "Port to listen on")
+	flag.StringVar(&cert, "c", "", ".cert file")
+	flag.StringVar(&key, "k", "", ".key file")
+	flag.StringVar(&port, "port", "1900", "Port to listen on")
 	flag.Parse()
-	if portFlag != "" {
-		port = portFlag
-	} else if p := os.Getenv("PORT"); p != "" {
-		port = p
-	} else {
-		port = "1900"
-	}
 }
 
 var upgrader = websocket.Upgrader{
@@ -94,17 +89,10 @@ func pingHandler(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(response)
 }
 
-var cert string
-var key string
-
 var logprefix = "jsdos-relay"
 
 func main() {
 	log.Println(logprefix, "Listening on port", port)
-
-	flag.StringVar(&cert, "c", "", ".cert file")
-	flag.StringVar(&key, "k", "", ".key file")
-	flag.Parse()
 
 	http.HandleFunc("/ping", pingHandler)
 

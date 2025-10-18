@@ -1,8 +1,10 @@
 package main
 
 import (
+	"crypto/tls"
 	"encoding/json"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"strings"
@@ -13,7 +15,6 @@ import (
 var port string
 var cert string
 var key string
-
 
 func init() {
 	flag.StringVar(&cert, "c", "", ".cert file")
@@ -94,15 +95,52 @@ var logprefix = "jsdos-relay"
 func main() {
 	log.Println(logprefix, "Listening on port", port)
 
-	http.HandleFunc("/ping", pingHandler)
+	// http.HandleFunc("/ping", pingHandler)
 
-	http.HandleFunc("/ipx/", ipxWebSocket)
-	if len(cert) == 0 || len(key) == 0 {
+	// http.HandleFunc("/ipx/", ipxWebSocket)
+	// if len(cert) == 0 || len(key) == 0 {
+	// 	log.Println(logprefix, ".cert or .key file is not provided, disabling TLS")
+	// 	if err := http.ListenAndServe(":"+port, nil); err != nil {
+	// 		log.Fatal(logprefix, err)
+	// 	}
+	// } else if err := http.ListenAndServeTLS(":"+port, cert, key, nil); err != nil {
+	// 	log.Fatal(logprefix, err)
+	// }
+
+	hasKeyAndCert := len(cert) != 0 && len(key) != 0
+
+	mux := http.NewServeMux()
+	mux.HandleFunc("/ping", pingHandler)
+	mux.HandleFunc("/ipx/", ipxWebSocket)
+
+	var tlsCfg *tls.Config = nil
+	if hasKeyAndCert {
+		tlsCfg = &tls.Config{
+			GetCertificate: func(*tls.ClientHelloInfo) (*tls.Certificate, error) {
+				keyPair, err := tls.LoadX509KeyPair(cert, key)
+				if err != nil {
+					return nil, err
+				}
+				return &keyPair, nil
+			},
+		}
+	}
+
+	srv := &http.Server{
+		Addr:      fmt.Sprintf(":%s", port),
+		Handler:   mux,
+		TLSConfig: tlsCfg,
+	}
+
+	if !hasKeyAndCert {
 		log.Println(logprefix, ".cert or .key file is not provided, disabling TLS")
-		if err := http.ListenAndServe(":"+port, nil); err != nil {
+		if err := srv.ListenAndServe(); err != nil {
 			log.Fatal(logprefix, err)
 		}
-	} else if err := http.ListenAndServeTLS(":"+port, cert, key, nil); err != nil {
+	} else if err := srv.ListenAndServeTLS("", ""); err != nil {
 		log.Fatal(logprefix, err)
 	}
+
+	// run server on port "8443"
+	log.Fatal()
 }
